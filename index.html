@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Для тебя 💖</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+    color: #fff;
+    touch-action: manipulation;
+  }
+  .stars {
+    position: fixed; inset: 0;
+    background-image:
+      radial-gradient(2px 2px at 20% 30%, #fff, transparent),
+      radial-gradient(2px 2px at 60% 70%, #fff, transparent),
+      radial-gradient(1px 1px at 80% 20%, #fff, transparent),
+      radial-gradient(1px 1px at 40% 80%, #fff, transparent),
+      radial-gradient(2px 2px at 90% 60%, #fff, transparent);
+    animation: twinkle 4s infinite alternate;
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  @keyframes twinkle { from {opacity:0.3} to {opacity:0.8} }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .container {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    max-width: 500px;
+    width: 100%;
+  }
+
+  .card {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-radius: 25px;
+    padding: 40px 25px;
+    box-shadow: 0 20px 60px rgba(255,105,180,0.3);
+    border: 1px solid rgba(255,255,255,0.15);
+    animation: fadeIn 0.6s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .emoji { font-size: 70px; margin-bottom: 20px; animation: bounce 2s infinite; }
+  @keyframes bounce {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  h1 { font-size: 22px; margin-bottom: 15px; line-height: 1.4; }
+  p { font-size: 16px; line-height: 1.6; opacity: 0.9; margin-bottom: 20px; }
+
+  .btn {
+    background: linear-gradient(135deg, #ff6b9d, #ff8fab);
+    color: #fff;
+    border: none;
+    padding: 15px 35px;
+    font-size: 17px;
+    border-radius: 50px;
+    cursor: pointer;
+    font-weight: 600;
+    box-shadow: 0 10px 30px rgba(255,107,157,0.5);
+    transition: transform 0.3s, box-shadow 0.3s;
+    margin: 5px;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .btn:hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(255,107,157,0.7); }
+  .btn:active { transform: scale(0.95); }
+
+  .no-btn {
+    background: linear-gradient(135deg, #999, #666);
+    box-shadow: 0 10px 30px rgba(150,150,150,0.4);
+    position: relative;
+    transition: left 0.25s ease, top 0.25s ease, transform 0.25s ease;
+    z-index: 100;
+  }
+
+  /* Когда кнопка "убегает" — фиксируем её для свободного перемещения */
+  .no-btn.escaping {
+    position: fixed;
+    margin: 0;
+    transition: left 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+                top 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+                transform 0.3s ease;
+  }
+
+  .hearts {
+    position: fixed; inset: 0;
+    pointer-events: none; overflow: hidden;
+    z-index: 1;
+  }
+  .heart {
+    position: absolute;
+    font-size: 24px;
+    animation: floatUp linear infinite;
+    opacity: 0.7;
+  }
+  @keyframes floatUp {
+    from { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+    10% { opacity: 0.8; }
+    to { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+  }
+
+  .progress {
+    display: flex; justify-content: center; gap: 8px;
+    margin-bottom: 25px;
+  }
+  .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    transition: all 0.3s;
+  }
+  .dot.active { background: #ff6b9d; transform: scale(1.3); box-shadow: 0 0 10px #ff6b9d; }
+
+  /* На мобильных кнопки чуть крупнее */
+  @media (max-width: 500px) {
+    .card { padding: 30px 20px; }
+    .emoji { font-size: 60px; }
+    h1 { font-size: 20px; }
+    p { font-size: 15px; }
+    .btn { padding: 14px 28px; font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="stars"></div>
+<div class="hearts" id="hearts"></div>
+
+<div class="container">
+  <div class="progress" id="progress"></div>
+  <div class="card" id="card"></div>
+</div>
+
+<script>
+const screens = [
+  {
+    emoji: "🌸",
+    title: "Привет, солнышко",
+    text: "Я знаю, что тебе сейчас грустно. И я очень хочу это исправить. Давай поиграем? Это займёт 2 минуты 💫",
+    btn: "Давай! →"
+  },
+  {
+    emoji: "💌",
+    title: "Первое задание",
+    text: "Закрой глаза и представь, что я сейчас рядом. Обнимаю тебя крепко-крепко. Чувствуешь? 🤗",
+    btn: "Чувствую ❤️"
+  },
+  {
+    emoji: "🎁",
+    title: "Маленький секрет",
+    text: "Ты знаешь, что когда ты грустишь — где-то далеко один человек тоже не может найти себе места? Потому что ты — его вселенная.",
+    btn: "Дальше →"
+  },
+  {
+    emoji: "😂",
+    title: "А теперь улыбнись!",
+    text: "Почему программисты путают Хэллоуин и Рождество? Потому что OCT 31 == DEC 25 😄",
+    btn: "Ха-ха, ещё!"
+  },
+  {
+    emoji: "🌟",
+    title: "Ты — особенная",
+    text: "В мире 8 миллиардов человек. И среди них есть одна, о которой я думаю каждый день. Это ты. И это не изменится никогда.",
+    btn: "Продолжай 💕"
+  },
+  {
+    emoji: "🫶",
+    title: "Последний вопрос",
+    text: "Обещаешь, что улыбнёшься хотя бы один раз сегодня? Ради меня?",
+    btn: "Обещаю ❤️",
+    btn2: "Не могу...",
+    isFinal: true
+  },
+  {
+    emoji: "💖",
+    title: "Спасибо тебе",
+    text: "Я горжусь тобой. Ты сильная, красивая и самая лучшая. Помни: расстояние — это временно, а моя любовь — навсегда. Я с тобой. До самого конца. Люблю тебя 🌍💕",
+    btn: "Обнимаю 🥰"
+  }
+];
+
+let current = 0;
+const card = document.getElementById('card');
+const progressEl = document.getElementById('progress');
+
+function renderProgress() {
+  progressEl.innerHTML = screens.map((_, i) =>
+    `<div class="dot ${i === current ? 'active' : ''}"></div>`
+  ).join('');
+}
+
+function render() {
+  renderProgress();
+  const s = screens[current];
+  card.innerHTML = `
+    <div class="emoji">${s.emoji}</div>
+    <h1>${s.title}</h1>
+    <p>${s.text}</p>
+    <button class="btn" onclick="next()">${s.btn}</button>
+    ${s.btn2 ? `<button class="btn no-btn" id="noBtn">${s.btn2}</button>` : ''}
+  `;
+  card.style.animation = 'none';
+  card.offsetHeight;
+  card.style.animation = 'fadeIn 0.6s ease';
+
+  // Инициализируем убегающую кнопку, если она есть
+  const noBtn = document.getElementById('noBtn');
+  if (noBtn) initEscapingButton(noBtn);
+}
+
+function next() {
+  if (current < screens.length - 1) {
+    current++;
+    if (current === 5) burstHearts(30);
+    render();
+  }
+}
+
+/* ============================================================
+   УБЕГАЮЩАЯ КНОПКА — работает и на ПК (мышь), и на телефоне (тач)
+   ============================================================ */
+function initEscapingButton(btn) {
+  let escaped = false;
+  const MARGIN = 12;          // отступ от краёв экрана
+  const SAFE_DIST = 90;       // на каком расстоянии "чует" курсор/палец (px)
+  const SAFE_DIST_TOUCH = 70; // на телефоне — чуть меньше
+
+  // Переводим кнопку в fixed-режим, сохраняя её текущую позицию
+  function enableEscaping() {
+    if (escaped) return;
+    const rect = btn.getBoundingClientRect();
+    btn.classList.add('escaping');
+    btn.style.left = rect.left + 'px';
+    btn.style.top = rect.top + 'px';
+    btn.style.width = rect.width + 'px';
+    btn.style.height = rect.height + 'px';
+    escaped = true;
+  }
+
+  // Телепорт/убегание кнопки в новое безопасное место
+  function moveAway(fromX, fromY, isTouch) {
+    enableEscaping();
+
+    const btnW = btn.offsetWidth;
+    const btnH = btn.offsetHeight;
+    const maxX = window.innerWidth - btnW - MARGIN;
+    const maxY = window.innerHeight - btnH - MARGIN;
+    const minX = MARGIN;
+    const minY = MARGIN;
+
+    let newX, newY;
+    let tries = 0;
+    const safeDist = isTouch ? SAFE_DIST_TOUCH : SAFE_DIST;
+
+    // Ищем точку подальше от курсора/пальца
+    do {
+      newX = minX + Math.random() * (maxX - minX);
+      newY = minY + Math.random() * (maxY - minY);
+      tries++;
+    } while (
+      tries < 30 &&
+      Math.hypot(newX + btnW / 2 - fromX, newY + btnH / 2 - fromY) < safeDist * 2
+    );
+
+    btn.style.left = newX + 'px';
+    btn.style.top = newY + 'px';
+    btn.style.transform = `rotate(${(Math.random() - 0.5) * 30}deg)`;
+  }
+
+  // === ПК: мышь приближается ===
+  function onMouseMove(e) {
+    if (e.pointerType === 'touch') return;
+    const rect = btn.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+    if (dist < SAFE_DIST) {
+      moveAway(e.clientX, e.clientY, false);
+    }
+  }
+
+  // === Телефон: палец приближается (до касания) ===
+  function onTouchStart(e) {
+    const t = e.touches[0];
+    if (!t) return;
+    const rect = btn.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dist = Math.hypot(t.clientX - cx, t.clientY - cy);
+    if (dist < SAFE_DIST_TOUCH) {
+      e.preventDefault(); // не даём нажать
+      moveAway(t.clientX, t.clientY, true);
+    }
+  }
+
+  // На всякий случай: если всё же как-то попали — не срабатывает
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Убегаем в случайное место
+    const rect = btn.getBoundingClientRect();
+    moveAway(rect.left, rect.top, false);
+    return false;
+  });
+
+  // Отключаем стандартные события
+  btn.addEventListener('mousedown', (e) => e.preventDefault());
+  btn.addEventListener('touchstart', onTouchStart, { passive: false });
+  btn.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+
+  document.addEventListener('mousemove', onMouseMove);
+
+  // Если повернули телефон / изменили размер — вернём кнопку в пределы экрана
+  window.addEventListener('resize', () => {
+    if (!escaped) return;
+    const rect = btn.getBoundingClientRect();
+    const maxX = window.innerWidth - rect.width - MARGIN;
+    const maxY = window.innerHeight - rect.height - MARGIN;
+    if (rect.left > maxX) btn.style.left = Math.max(MARGIN, maxX) + 'px';
+    if (rect.top > maxY) btn.style.top = Math.max(MARGIN, maxY) + 'px';
+  });
+}
+
+/* ============================================================
+   Сердечки и вспомогательные штуки
+   ============================================================ */
+function burstHearts(count) {
+  for (let i = 0; i < count; i++) {
+    setTimeout(createHeart, i * 100);
+  }
+}
+
+function createHeart() {
+  const heart = document.createElement('div');
+  heart.className = 'heart';
+  heart.textContent = ['💖','💕','💗','❤️','💝','🌸'][Math.floor(Math.random()*6)];
+  heart.style.left = Math.random() * 100 + '%';
+  heart.style.animationDuration = (3 + Math.random() * 3) + 's';
+  heart.style.fontSize = (16 + Math.random() * 20) + 'px';
+  document.getElementById('hearts').appendChild(heart);
+  setTimeout(() => heart.remove(), 6000);
+}
+
+setInterval(() => { if (Math.random() > 0.6) createHeart(); }, 800);
+
+render();
+</script>
+</body>
+</html>
